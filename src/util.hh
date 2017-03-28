@@ -4,4 +4,17 @@
 
 using namespace cv;
 
-Mat grayscale(Mat img);
+namespace util
+{
+  Mat grayscale(Mat img);
+
+  template<typename T>
+    T max(T a, T b);
+
+
+  template<typename T>
+    T max(T a, T b)
+    {
+      return a > b ? a : b;
+    }
+}
