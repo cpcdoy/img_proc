@@ -23,5 +23,5 @@ class blur_detect
     int levels = 3;
     int threshold = 35;
     // Min_zero very close to zero
-    int min_zero = 0.05;
+    float min_zero = 0.2;
 };

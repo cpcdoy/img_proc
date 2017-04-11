@@ -35,8 +35,8 @@ void blur_detect::build_edge_map()
   // HH_i => min (w / 2^i, h / 2^i), max (w / 2^(i - 1), h / 2^(i - 1))
   for (int i = levels; i > 0; i--)
   {
-    int sub_band_max_w = haar_pyramid.cols / pow(2, i);
-    int sub_band_max_h = haar_pyramid.rows / pow(2, i);
+    int sub_band_max_w = haar_pyramid.cols >> i;
+    int sub_band_max_h = haar_pyramid.rows >> i;
     edge_map.push_back(Mat(sub_band_max_w, sub_band_max_h, CV_8UC1));
 
     for (int l = 0; l < sub_band_max_h; l++)
@@ -58,6 +58,29 @@ void blur_detect::build_edge_map()
   for (int i = 0; i < levels; i++)
     cv::imshow("edge map " + i, edge_map[i]);
 }
+
+/*void blur_detect::build_edge_map()
+{
+  haar.compute(levels);
+
+  auto haar_pyramid = haar.get_haar_pyramid();
+  int w = haar_pyramid.cols;
+  int h = haar_pyramid.rows;
+
+  for (int i = 1; i <= levels; i++)
+    edge_map.push_back(Mat(w >> i, h >> i, CV_8UC1));
+
+  for (int i = 1; i <= levels; i++)
+    for (int l = 0; l < h >> i; l++)
+      for (int k = 0; k < w >> i; k++)
+      {
+        int lh = haar_pyramid.data[(l + (h >> i)) * w + (k >> i)];
+        int hl = haar_pyramid.data[(l * w + (k >> i) + (w >> i))];
+        int hh = haar_pyramid.data[((l + (h >> i)) * w + k + (w >> i))];
+
+        edge_map[i - 1].data[k + l * (w >> i)] = sqrt(lh * lh + hl * hl + hh * hh);
+      }
+}*/
 
 void blur_detect::partition_edge_map()
 {
@@ -92,8 +115,8 @@ void blur_detect::partition_edge_map()
 
 float blur_detect::compute_blur_extent()
 {
-  float n_edge, n_da, n_rg, n_brg;
-  n_edge = n_da = n_rg = n_brg = 0.0f;
+  int n_edge, n_da, n_rg, n_brg;
+  n_edge = n_da = n_rg = n_brg = 0;
 
   auto haar_pyramid = haar.get_haar_pyramid();
 
@@ -109,9 +132,9 @@ float blur_detect::compute_blur_extent()
         int x = k >> (i + 1);
         int y = l >> (i + 1);
 
-        if (x > emax_w)
+        if (x >= emax_w)
           x = emax_w - 1;
-        if (y > emax_h)
+        if (y >= emax_h)
           y = emax_h - 1;
 
         edges[i] = emax[i].data[x + y * emax_w];
@@ -125,24 +148,26 @@ float blur_detect::compute_blur_extent()
         if (edges[0] > edges[1] && edges[1] > edges[2])
           n_da++;
         // Rule 3/4
-        else if ((edges[1] > edges[0] && edges[1] > edges[2]) || (edges[1] < edges[0] && edges[1] < edges[2]))
+        else if ((edges[0] < edges[1] && edges[1] < edges[2]) || (edges[1] > edges[0] && edges[1] > edges[2]))
         {
           n_rg++;
           // Rule 5
-          if (edges[1] < threshold)
+          if (edges[0] < threshold)
             n_brg++;
         }
       }
     }
   const float epsilon = 5.960465e-8;
   float per = n_da / (n_edge + epsilon);
+  float extent = (n_brg + epsilon) / (n_rg + epsilon);
   std::cout << "Per = " << per << std::endl;
   std::cout << "n_da = " << n_da << std::endl;
   std::cout << "n_edge = " << n_edge << std::endl;
   std::cout << "n_da ratio = " << per << std::endl;
   std::cout << "n_brg = " << n_brg << std::endl;
   std::cout << "n_rg = " << n_rg << std::endl;
-  if (per > min_zero && n_rg != 0)
+  std::cout << (per > min_zero || extent > 0.6 ? "sharp" : "blurred") << std::endl;
+  if (n_rg != 0)
     return (n_brg + epsilon) / (n_rg + epsilon);
   return 0.0f;
 }
