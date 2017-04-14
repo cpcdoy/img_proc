@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 project(img_proc)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=c++11 -pedantic -ggdb3")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=c++11 -pedantic -ggdb3 -pthread")
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Werror -O3")
+#set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -Werror -O3")
 
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})

@@ -1,35 +1,11 @@
 #include "lucy_richardson.hh"
 
-Mat lucy_richardson::apply_deconvolution()
-{
-  Mat res;
-  medianBlur(img, img, 3);
-  if (chans > 1)
-  {
-    Mat channels[chans];
-    split(img, channels);
-
-    Mat results[chans];
-    for (int i = 0; i < 3; i++)
-      results[i] = core_deconv(channels[i]);
-
-    merge(results, 3, res);
-  }
-  else if (chans == 1)
-  {
-    img = util::grayscale(img);
-    res = core_deconv(img);
-  }
-
-  return res;
-}
-
-Mat lucy_richardson::core_deconv(Mat m)
+void lucy_richardson::core_deconv(Mat m, Mat& res_channel, int tid)
 {
   m.convertTo(m, CV_64F);
   normalize(m, m, 0, 1, NORM_MINMAX);
   int winSize = 8 * sigma + 1;
-  generate_psf_gaussian(winSize);
+  //generate_psf_gaussian(winSize);
   //generate_psf_defocus(winSize);
 
   Mat res;
@@ -59,7 +35,7 @@ Mat lucy_richardson::core_deconv(Mat m)
 
     filter2D(Y, reBlurred, -1, psf);
     //GaussianBlur(Y, reBlurred, Size(winSize,winSize), sigma, sigma);
-    reBlurred.setTo(epsilon, reBlurred <= 0); 
+    reBlurred.setTo(epsilon, reBlurred <= 0);
 
     divide(wI, reBlurred, imR);
     imR = imR + epsilon;
@@ -72,10 +48,12 @@ Mat lucy_richardson::core_deconv(Mat m)
 
     T2 = T1.clone();
     T1 = J1 - Y;
+
+    tracks[tid] = j;
   }
 
   res = J1.clone();
   normalize(res, res, 0, 1, NORM_MINMAX); 
 
-  return res;
+  res_channel = res;
 }
