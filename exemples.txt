@@ -1,0 +1,21 @@
+./img_proc --path samples/car_plate_blur.jpg  --channels 1 --it 20 --apply lr --psf blind 6 4  --snr 1000
+
+./img_proc --path samples/car_plate_blur_motion.jpg --channels 3 --it 20 --apply wiener,lr --psf psf/psf_motion_65.jpg --snr 1000 --window 65
+
+./img_proc --path samples/car_plate_blur_motion_45.jpg --channels 3 --it 15 --apply wiener,lr --psf psf/psf_motion_65.jpg --snr 10000 --window 65
+
+./img_proc --path samples/car_plate_blur_motion_70.jpg --channels 3 --it 20 --apply wiener,lr --psf psf/psf_motion_65.jpg --snr 10000 --window 100
+
+./img_proc --path samples/face_blur.jpg --channels 3 --it 12 --apply lr,wiener --psf psf/psf_motion_l50_a53.jpg --snr 10000
+
+./img_proc --path samples/text_motion.jpg --channels 3 --it 60 --apply wiener,lr --psf psf/psf_motion_l31_a85.png --snr 10000 --window 65
+
+./img_proc --path samples/text_defocus.jpg --channels 3 --it 60 --apply wiener,lr --psf psf/psf_defocus_65.jpg --snr 20000 --window 65
+
+./img_proc --path samples/blur_text.png  --channels 3 --it 15 --apply wiener --psf gaussian 55 --snr 100000
+
+./img_proc --path samples/ClockBlur.jpg  --channels 3 --it 100 --apply wiener,lr --psf psf/psf_clock.jpg --snr 100000
+
+Anecdote:
+
+./img_proc --path samples/IMG-20170413-WA0018.jpg  --channels 3 --it 4 --apply wiener,lr --psf psf/psf_defocus_l03.png --snr 100000
