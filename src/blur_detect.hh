@@ -14,11 +14,14 @@ class blur_detect
   private:
     void build_edge_map();
     void partition_edge_map();
+    float laplacian_of_gauss();
     float compute_blur_extent();
 
     std::vector<Mat> edge_map;
     std::vector<Mat> emax;
     haar_wavelet haar;
+
+    Mat img;
 
     int levels = 3;
     int threshold = 35;

@@ -1,27 +1,28 @@
 #include "lucy_richardson.hh"
 
-void lucy_richardson::core_deconv(Mat m, Mat& res_channel, int tid)
+void lucy_richardson::core_deconv_per_channel(Mat m, Mat& res_channel, int tid)
 {
   m.convertTo(m, CV_64F);
   normalize(m, m, 0, 1, NORM_MINMAX);
+  /*sigma = 5.0;
   int winSize = 8 * sigma + 1;
-  //generate_psf_gaussian(winSize);
-  //generate_psf_defocus(winSize);
+  generate_psf_gaussian(winSize);
+  generate_psf_defocus(winSize);*/
 
   Mat res;
-  Mat Y = m.clone();
-  Mat J1 = m.clone();
-  Mat J2 = m.clone();
-  Mat wI = m.clone(); 
-  Mat imR = m.clone();
-  Mat reBlurred = m.clone();	
+  Mat f_k_lambda = m.clone();
+  Mat psi_f_k = m.clone();
+  Mat f_k = m.clone();
+  Mat g = m.clone(); 
+  Mat blurred_on_reblurred = m.clone();
+  Mat reblurred = m.clone();
 
   Mat T1, T2, tmpMat1, tmpMat2;
   T1 = Mat(m.rows,m.cols, CV_64F, 0.0);
   T2 = Mat(m.rows,m.cols, CV_64F, 0.0);
 
   double lambda = 0;
-  for(int j = 0; j < num_iterations; j++) 
+  for(int j = 0; j < num_iterations; j++)
   {
     if (j>1)
     {
@@ -30,30 +31,30 @@ void lucy_richardson::core_deconv(Mat m, Mat& res_channel, int tid)
       lambda=sum(tmpMat1)[0] / (sum(tmpMat2)[0]+epsilon);
     }
 
-    Y = J1 + lambda * (J1-J2);
-    Y.setTo(0, Y < 0);
+    f_k_lambda = psi_f_k + lambda * (psi_f_k-f_k);
+    f_k_lambda.setTo(0, f_k_lambda < 0);
 
-    filter2D(Y, reBlurred, -1, psf);
-    //GaussianBlur(Y, reBlurred, Size(winSize,winSize), sigma, sigma);
-    reBlurred.setTo(epsilon, reBlurred <= 0);
+    filter2D(f_k_lambda, reblurred, -1, psf[tid]);
+    reblurred.setTo(epsilon, reblurred <= 0);
 
-    divide(wI, reBlurred, imR);
-    imR = imR + epsilon;
+    divide(g, reblurred, blurred_on_reblurred);
+    blurred_on_reblurred = blurred_on_reblurred + epsilon;
 
-    filter2D(imR, imR, -1, psf);
-    //GaussianBlur(imR, imR, Size(winSize,winSize), sigma, sigma);
+    filter2D(blurred_on_reblurred, blurred_on_reblurred, -1, psf[tid]);
 
-    J2 = J1.clone();
-    multiply(Y, imR, J1);
+    pow(blurred_on_reblurred, 2, blurred_on_reblurred);
+
+    f_k = psi_f_k.clone();
+    multiply(f_k_lambda, blurred_on_reblurred, psi_f_k);
 
     T2 = T1.clone();
-    T1 = J1 - Y;
+    T1 = psi_f_k - f_k_lambda;
 
     tracks[tid] = j;
   }
 
-  res = J1.clone();
-  normalize(res, res, 0, 1, NORM_MINMAX); 
+  res = psi_f_k.clone();
+  normalize(res, res, 0, 1, NORM_MINMAX);
 
   res_channel = res;
 }

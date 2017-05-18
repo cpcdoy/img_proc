@@ -15,12 +15,17 @@ void haar_wavelet::compute(int levels)
   for (; w < img.cols; w *= 2);
   for (; h < img.rows; h *= 2);
 
-  w /= 2;
-  h /= 2;
+  int max = w > h ? w : h;
+  w = h = max;
 
-  Rect r(0, 0, w, h);
+  Mat img_pad = Mat(h, w, CV_8UC1);
 
-  img = img(r);
+  Range colRange = Range(0, min(img.cols, img_pad.cols));
+  Range rowRange = Range(0, min(img.rows, img_pad.rows));
+  img(rowRange, colRange).copyTo(img_pad(rowRange, colRange));
+
+  img = img_pad.clone();
+  imshow("tes", img);
 
   for (int i = 0; i < levels; i++)
     haar(w / pow(2, i), h / pow(2, i));

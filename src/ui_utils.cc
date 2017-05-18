@@ -65,13 +65,88 @@ struct cmd_params parse_cmd_params(int argc, char** argv)
         break;
       }
     }
+    else if (str == "--window")
+    {
+      i++;
+      if (i < argc && util::is_number(argv[i]))
+      {
+        params.window_size_given = true;
+        params.window_size = std::stoi(argv[i]);
+      }
+      else
+      {
+        params.error = true;
+        std::cerr << "window needs one argument" << std::endl;
+        break;
+      }
+    }
     else if (str == "--psf")
     {
       i++;
       if (i < argc)
       {
-        params.psf_path = std::string(argv[i]);
-        params.psf_given = true;
+        auto arg = std::string(argv[i]);
+        if (arg == "defocus")
+        {
+          i++;
+          if (i < argc && util::is_number(argv[i]))
+          {
+            params.defocus = true;
+            params.defocus_radius = std::stoi(argv[i]);
+          }
+          else
+          {
+            params.error = true;
+            std::cerr << "defocus needs one argument" << std::endl;
+            break;
+          }
+        }
+        else if (arg == "gaussian")
+        {
+          i++;
+          if (i < argc && util::is_number(argv[i]))
+          {
+            params.gaussian = true;
+            params.gaussian_sigma = std::stoi(argv[i]);
+          }
+          else
+          {
+            params.error = true;
+            std::cerr << "gaussian needs one argument" << std::endl;
+            break;
+          }
+        }
+        else if (arg == "blind")
+        {
+          i++;
+          if (i < argc && util::is_number(argv[i]))
+          {
+            params.blind_it = std::stoi(argv[i]);
+            i++;
+            if (i < argc && util::is_number(argv[i]))
+            {
+              params.blind = true;
+              params.blind_prec = std::stoi(argv[i]);
+            }
+            else
+            {
+              params.error = true;
+              std::cerr << "blind needs a second argument" << std::endl;
+              break;
+            }
+          }
+          else
+          {
+            params.error = true;
+            std::cerr << "blind needs one argument" << std::endl;
+            break;
+          }
+        }
+        else
+        {
+          params.psf_path = std::string(argv[i]);
+          params.psf_given = true;
+        }
       }
       else
       {
@@ -87,6 +162,17 @@ struct cmd_params parse_cmd_params(int argc, char** argv)
         params.channels = std::stoi(argv[i]);
       else
         std::cerr << "--channels needs an integer" << std::endl;
+    }
+    else if (str == "--snr")
+    {
+      i++;
+      if (i < argc && util::is_number(argv[i]))
+      {
+        params.snr = std::stoi(argv[i]);
+        params.snr_given = true;
+      }
+      else
+        std::cerr << "--snr needs an integer" << std::endl;
     }
     else if (str == "--it")
     {

@@ -34,6 +34,22 @@ struct cmd_params
   bool lr = false;
   bool detect = false;
 
+  bool defocus = false;
+  int defocus_radius = 0;
+
+  bool gaussian = false;
+  float gaussian_sigma = 0.0f;
+
+  bool blind = false;
+  int blind_it = 0;
+  int blind_prec = 0;
+
+  int window_size = 65;
+  bool window_size_given = false;
+
+  int snr = 1000;
+  bool snr_given = false;
+
   bool error = false;
 };
 

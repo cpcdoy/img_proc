@@ -2,6 +2,8 @@
 
 void blur_detect::set_image(Mat i)
 {
+  img = i.clone();
+
   haar.set_image(i.clone());
 }
 
@@ -60,7 +62,7 @@ void blur_detect::build_edge_map()
 }
 
 /*void blur_detect::build_edge_map()
-{
+  {
   haar.compute(levels);
 
   auto haar_pyramid = haar.get_haar_pyramid();
@@ -68,19 +70,19 @@ void blur_detect::build_edge_map()
   int h = haar_pyramid.rows;
 
   for (int i = 1; i <= levels; i++)
-    edge_map.push_back(Mat(w >> i, h >> i, CV_8UC1));
+  edge_map.push_back(Mat(w >> i, h >> i, CV_8UC1));
 
   for (int i = 1; i <= levels; i++)
-    for (int l = 0; l < h >> i; l++)
-      for (int k = 0; k < w >> i; k++)
-      {
-        int lh = haar_pyramid.data[(l + (h >> i)) * w + (k >> i)];
-        int hl = haar_pyramid.data[(l * w + (k >> i) + (w >> i))];
-        int hh = haar_pyramid.data[((l + (h >> i)) * w + k + (w >> i))];
+  for (int l = 0; l < h >> i; l++)
+  for (int k = 0; k < w >> i; k++)
+  {
+  int lh = haar_pyramid.data[(l + (h >> i)) * w + (k >> i)];
+  int hl = haar_pyramid.data[(l * w + (k >> i) + (w >> i))];
+  int hh = haar_pyramid.data[((l + (h >> i)) * w + k + (w >> i))];
 
-        edge_map[i - 1].data[k + l * (w >> i)] = sqrt(lh * lh + hl * hl + hh * hh);
-      }
-}*/
+  edge_map[i - 1].data[k + l * (w >> i)] = sqrt(lh * lh + hl * hl + hh * hh);
+  }
+  }*/
 
 void blur_detect::partition_edge_map()
 {
@@ -157,6 +159,7 @@ float blur_detect::compute_blur_extent()
         }
       }
     }
+
   const float epsilon = 5.960465e-8;
   float per = n_da / (n_edge + epsilon);
   float extent = (n_brg + epsilon) / (n_rg + epsilon);
@@ -172,9 +175,26 @@ float blur_detect::compute_blur_extent()
   return 0.0f;
 }
 
+float blur_detect::laplacian_of_gauss()
+{
+  Mat gray, dst, abs_dst;
+
+  GaussianBlur(img, img, Size(3,3), 0, 0, BORDER_DEFAULT);
+  gray = util::grayscale(img);
+  imshow("resulttt2", gray);
+
+  Laplacian(gray, dst, CV_16S, 3, 1, 0, BORDER_DEFAULT);
+  convertScaleAbs(dst, abs_dst);
+  imshow("resulttt", abs_dst);
+
+  cv::pow(abs_dst, 2, abs_dst);
+  return cv::sum(abs_dst)[0] / (abs_dst.cols * abs_dst.rows);
+}
+
 float blur_detect::get_blur_extent()
 {
   build_edge_map();
   partition_edge_map();
+  std::cout << "LoG = " << laplacian_of_gauss() << std::endl;
   return compute_blur_extent();
 }
